@@ -1,0 +1,1 @@
+# rotacion_stands
