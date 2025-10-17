@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cronograma de Rotación</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h1 { color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; vertical-align: top; }
+    th { background-color: #eee; }
+    textarea, input { width: 100%; margin-top: 10px; padding: 8px; }
+    .config { margin-top: 30px; background: #fff; padding: 20px; border-radius: 8px; }
+    .btn { padding: 10px 20px; margin-top: 10px; background: #0078D4; color: white; border: none; cursor: pointer; }
+    .btn:hover { background: #005fa3; }
+  </style>
+</head>
+<body>
+
+  <h1>🧠 Cronograma de Rotación de Stands</h1>
+
+  <div class="config">
+    <label>Grupos (separados por coma):</label>
+    <textarea id="groupInput">6A1,6A2,6A3,6A4,6A5,6B1,6B2,6B3,6B4,6B5,7A1,7A2,7A3,7A4,7A5,7A6,7B1,7B2,7B3,7B4,7B5,801,802,803,804,805,901,902,903,904,905,906,907,1001,1002,1003,1004,1005</textarea>
+
+    <label>Stands (separados por coma):</label>
+    <input id="standInput" value="ROMPECOCOS,JUEGOS MENTALES,GIMNASIO MENTAL,ACERTIJOS,DESAFÍO MATEMÁTICO" />
+
+    <label>Máximo de grupos por stand:</label>
+    <input type="number" id="maxGroups" value="8" />
+
+    <label>Hora de inicio:</label>
+    <input type="time" id="startTime" value="10:00" />
+
+    <label>Hora de fin:</label>
+    <input type="time" id="endTime" value="12:30" />
+
+    <button class="btn" onclick="generateSchedule()">Generar cronograma</button>
+  </div>
+
+  <div id="scheduleOutput"></div>
+
+  <script>
+    function generateSchedule() {
+      const groups = document.getElementById("groupInput").value.split(",").map(g => g.trim());
+      const stands = document.getElementById("standInput").value.split(",").map(s => s.trim());
+      const maxPerStand = parseInt(document.getElementById("maxGroups").value);
+      const [startHour, startMin] = document.getElementById("startTime").value.split(":").map(Number);
+      const [endHour, endMin] = document.getElementById("endTime").value.split(":").map(Number);
+      const totalMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+      const blockDuration = 20;
+      const blocks = Math.floor(totalMinutes / blockDuration);
+
+      // Validación: cada grupo debe tener tantos bloques como stands
+      if (blocks < stands.length) {
+        alert("El número de bloques debe ser al menos igual al número de stands.");
+        return;
+      }
+
+      // Inicializar cronograma
+      const schedule = Array.from({ length: blocks }, () => stands.map(() => []));
+      const groupAssignments = {};
+
+      // Asignar cada grupo a un stand distinto en cada bloque
+      for (let g of groups) {
+        groupAssignments[g] = [];
+      }
+
+      for (let s = 0; s < stands.length; s++) {
+        let shuffledGroups = [...groups].sort(() => Math.random() - 0.5);
+        let blockIndex = 0;
+        for (let g of shuffledGroups) {
+          while (
+            blockIndex < blocks &&
+            (groupAssignments[g].includes(s) || schedule[blockIndex][s].length >= maxPerStand)
+          ) {
+            blockIndex++;
+          }
+          if (blockIndex < blocks) {
+            schedule[blockIndex][s].push(g);
+            groupAssignments[g].push(s);
+          }
+        }
+      }
+
+      // Construir tabla HTML
+      let html = "<h2>📅 Cronograma generado</h2><table><tr><th>Bloque</th><th>Horario</th>";
+      stands.forEach(s => html += `<th>${s}</th>`);
+      html += "</tr>";
+
+      for (let b = 0; b < blocks; b++) {
+        const start = new Date(0, 0, 0, startHour, startMin + b * blockDuration);
+        const end = new Date(0, 0, 0, startHour, startMin + (b + 1) * blockDuration);
+        const format = t => `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}`;
+        html += `<tr><td>${b + 1}</td><td>${format(start)} - ${format(end)}</td>`;
+        schedule[b].forEach(slot => html += `<td>${slot.join(", ")}</td>`);
+        html += "</tr>";
+      }
+
+      html += "</table>";
+      document.getElementById("scheduleOutput").innerHTML = html;
+    }
+  </script>
+
+</body>
+</html>
