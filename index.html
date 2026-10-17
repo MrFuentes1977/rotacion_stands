@@ -2,105 +2,252 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Cronograma de Rotación</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cronograma Exacto 9:00 a 11:30</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-    h1 { color: #333; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; vertical-align: top; }
-    th { background-color: #eee; }
-    textarea, input { width: 100%; margin-top: 10px; padding: 8px; }
-    .config { margin-top: 30px; background: #fff; padding: 20px; border-radius: 8px; }
-    .btn { padding: 10px 20px; margin-top: 10px; background: #0078D4; color: white; border: none; cursor: pointer; }
-    .btn:hover { background: #005fa3; }
+    :root {
+      --primary-color: #0056b3;
+      --bg-color: #f4f6f9;
+      --border-color: #cbd5e1;
+    }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: var(--bg-color); color: #333; }
+    h1 { color: #1e293b; text-align: center; margin-bottom: 20px; }
+    
+    .config-container { background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    
+    .row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+    .col { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+    
+    label { font-weight: 600; font-size: 14px; margin-bottom: 5px; color: #475569; }
+    textarea, input[type="text"], input[type="number"], input[type="time"] { 
+      padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; 
+    }
+    textarea { resize: vertical; min-height: 60px; }
+    
+    .button-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+    .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.2s; }
+    .btn-primary { background: var(--primary-color); color: white; }
+    .btn-primary:hover { background: #004494; }
+    .btn-print { background: #10b981; color: white; }
+    .btn-print:hover { background: #059669; }
+    
+    .alerta { background: #fee2e2; color: #b91c1c; padding: 12px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #ef4444; display: none; }
+    .info { background: #dbeafe; color: #1e40af; padding: 12px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #3b82f6; display: none; }
+    
+    .table-container { background: #fff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    th, td { border: 1px solid var(--border-color); padding: 12px 10px; text-align: center; font-size: 13px; vertical-align: top; }
+    th { background-color: var(--primary-color); color: white; font-weight: 600; position: sticky; top: 0; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+    
+    .time-cell { background-color: #e2e8f0 !important; color: #0f172a; line-height: 1.6; }
+    .time-start { font-weight: bold; font-size: 15px; display: block; }
+    .time-shift { font-size: 11px; color: #64748b; font-style: italic; display: block; margin-top: 2px;}
+    
+    .group-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+    .group-list li { background: #f1f5f9; padding: 3px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-weight: 500;}
+
+    .sugerencia { font-size: 12px; color: #d97706; margin-top: 4px; font-weight: bold; }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .config-container, .no-print { display: none !important; }
+      .table-container { box-shadow: none; border-radius: 0; }
+      th { background-color: #eee !important; color: black !important; -webkit-print-color-adjust: exact; }
+      tr:nth-child(even) { background-color: #f9f9f9 !important; -webkit-print-color-adjust: exact; }
+      td { border: 1px solid #999; }
+    }
   </style>
 </head>
 <body>
 
-  <h1>🧠 Cronograma de Rotación de Stands</h1>
+  <h1 class="no-print">🧠 Generador de Cronograma de Rotación</h1>
 
-  <div class="config">
-    <label>Grupos (separados por coma):</label>
-    <textarea id="groupInput">6A1,6A2,6A3,6A4,6A5,6B1,6B2,6B3,6B4,6B5,7A1,7A2,7A3,7A4,7A5,7A6,7B1,7B2,7B3,7B4,7B5,801,802,803,804,805,901,902,903,904,905,906,907,1001,1002,1003,1004,1005</textarea>
+  <div class="config-container no-print">
+    <div class="row">
+      <div class="col">
+        <label>Grupos (separados por coma):</label>
+        <textarea id="groupInput">6A1,6A2,6A3,6A4,6A5,6B1,6B2,6B3,6B4,6B5,7A1,7A2,7A3,7A4,7A5,7A6,7B1,7B2,7B3,7B4,7B5,8A01,8A02,8A03,8A04,8A05,8B01,8B02,8B03,8B04,8B05,901,902,903,904,905,1001,1002,1003,1004</textarea>
+      </div>
+      <div class="col">
+        <label>Stands (separados por coma):</label>
+        <textarea id="standInput">ROMPECOCOS,JUEGOS MENTALES,GIMNASIO MENTAL,ACERTIJOS,DESAFIO MATEMATICO,VIDEOJUEGOS</textarea>
+      </div>
+    </div>
 
-    <label>Stands (separados por coma):</label>
-    <input id="standInput" value="ROMPECOCOS,JUEGOS MENTALES,GIMNASIO MENTAL,ACERTIJOS,DESAFÍO MATEMÁTICO" />
+    <div class="row">
+      <div class="col">
+        <label>Hora de Inicio:</label>
+        <input type="time" id="startTime" value="09:00" />
+      </div>
+      <div class="col">
+        <label>Minutos en el Stand:</label>
+        <input type="number" id="durationStand" value="20" min="1" />
+      </div>
+      <div class="col">
+        <label>Minutos de Desplazamiento:</label>
+        <input type="number" id="durationShift" value="5" min="0" />
+      </div>
+    </div>
 
-    <label>Máximo de grupos por stand:</label>
-    <input type="number" id="maxGroups" value="8" />
+    <div class="row" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+      <div class="col">
+        <label>Aforo máximo de estudiantes por stand:</label>
+        <input type="number" id="aforoStand" value="30" min="1" oninput="sugerirGrupos()" />
+      </div>
+      <div class="col">
+        <label>Capacidad Máxima por Stand (Grupos):</label>
+        <input type="number" id="maxGroups" value="7" min="1" readonly style="background-color: #e2e8f0; cursor: not-allowed;" />
+        <span id="textoSugerencia" class="sugerencia"></span>
+      </div>
+    </div>
 
-    <label>Hora de inicio:</label>
-    <input type="time" id="startTime" value="10:00" />
+    <div class="button-group">
+      <button class="btn btn-primary" onclick="generateSchedule()">Generar Cronograma</button>
+      <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    </div>
 
-    <label>Hora de fin:</label>
-    <input type="time" id="endTime" value="12:30" />
-
-    <button class="btn" onclick="generateSchedule()">Generar cronograma</button>
+    <div id="mensajeValidacion" class="alerta"></div>
+    <div id="mensajeInfo" class="info"></div>
   </div>
 
-  <div id="scheduleOutput"></div>
+  <div id="scheduleOutput" class="table-container"></div>
 
   <script>
-    function generateSchedule() {
-      const groups = document.getElementById("groupInput").value.split(",").map(g => g.trim());
-      const stands = document.getElementById("standInput").value.split(",").map(s => s.trim());
-      const maxPerStand = parseInt(document.getElementById("maxGroups").value);
-      const [startHour, startMin] = document.getElementById("startTime").value.split(":").map(Number);
-      const [endHour, endMin] = document.getElementById("endTime").value.split(":").map(Number);
-      const totalMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
-      const blockDuration = 20;
-      const blocks = Math.floor(totalMinutes / blockDuration);
+    window.onload = function() {
+      if(localStorage.getItem('gruposRotacion')) document.getElementById('groupInput').value = localStorage.getItem('gruposRotacion');
+      if(localStorage.getItem('standsRotacion')) document.getElementById('standInput').value = localStorage.getItem('standsRotacion');
+      sugerirGrupos();
+    };
 
-      // Validación: cada grupo debe tener tantos bloques como stands
-      if (blocks < stands.length) {
-        alert("El número de bloques debe ser al menos igual al número de stands.");
+    function sugerirGrupos() {
+      const aforo = parseInt(document.getElementById("aforoStand").value) || 0;
+      // Sugerimos la capacidad dividiendo el aforo entre 4 (peor escenario: grupos de 4 estudiantes)
+      const capacidadSugerida = Math.floor(aforo / 4); 
+      
+      const inputMaxGroups = document.getElementById("maxGroups");
+      const textoSugerencia = document.getElementById("textoSugerencia");
+      
+      if (capacidadSugerida > 0) {
+        inputMaxGroups.value = capacidadSugerida;
+        textoSugerencia.innerHTML = `💡 Capacidad sugerida: ${capacidadSugerida} grupos (calculado con 4 est. c/u)`;
+      } else {
+        inputMaxGroups.value = 0;
+        textoSugerencia.innerHTML = "";
+      }
+    }
+
+    function generateSchedule() {
+      const groupInputVal = document.getElementById("groupInput").value;
+      const standInputVal = document.getElementById("standInput").value;
+      localStorage.setItem('gruposRotacion', groupInputVal);
+      localStorage.setItem('standsRotacion', standInputVal);
+
+      const groups = groupInputVal.split(",").map(g => g.trim()).filter(g => g !== "");
+      const stands = standInputVal.split(",").map(s => s.trim()).filter(s => s !== "");
+      
+      const startTimeVal = document.getElementById("startTime").value;
+      const durationStand = parseInt(document.getElementById("durationStand").value);
+      const durationShift = parseInt(document.getElementById("durationShift").value);
+      
+      const maxGroups = parseInt(document.getElementById("maxGroups").value);
+      const aforoStand = parseInt(document.getElementById("aforoStand").value);
+
+      const msgValidacion = document.getElementById("mensajeValidacion");
+      const msgInfo = document.getElementById("mensajeInfo");
+      const output = document.getElementById("scheduleOutput");
+      
+      msgValidacion.style.display = "none";
+      msgInfo.style.display = "none";
+      output.innerHTML = "";
+
+      if (!startTimeVal || isNaN(durationStand) || isNaN(durationShift)) {
+        mostrarError("Por favor, completa todos los campos numéricos y de hora.");
         return;
       }
 
-      // Inicializar cronograma
-      const schedule = Array.from({ length: blocks }, () => stands.map(() => []));
-      const groupAssignments = {};
+      // 1. EL TIEMPO ES LEY: La cantidad de bloques SIEMPRE es igual al número de stands
+      // Para que todos pasen por todos, se necesitan exactamente 6 bloques (si hay 6 stands).
+      const totalBlocks = stands.length; 
+      
+      const totalBlockTime = durationStand + durationShift;
+      const [startHour, startMin] = startTimeVal.split(":").map(Number);
 
-      // Asignar cada grupo a un stand distinto en cada bloque
-      for (let g of groups) {
-        groupAssignments[g] = [];
+      // 2. Calcular cuántos grupos reales tocan por stand
+      const baseGroupsPerStand = Math.floor(groups.length / stands.length);
+      const remainder = groups.length % stands.length;
+
+      // 3. Validar si la capacidad del stand (maxGroups) es suficiente
+      // Si los grupos que tocan por stand superan el aforo, lanzamos una alerta (pero generamos el cronograma igual)
+      const maxGroupsInAnyStand = baseGroupsPerStand + (remainder > 0 ? 1 : 0);
+      if (maxGroupsInAnyStand > maxGroups) {
+        msgValidacion.innerHTML = `⚠️ <strong>Atención:</strong> Tienes ${groups.length} grupos y ${stands.length} stands. En cada bloque habrá hasta ${maxGroupsInAnyStand} grupos por stand, lo cual <strong>supera tu capacidad sugerida</strong> de ${maxGroups} grupos (Aforo: ${aforoStand} est.). El cronograma se generará, pero considera reducir grupos o aumentar el aforo.`;
+        msgValidacion.style.display = "block";
       }
 
-      for (let s = 0; s < stands.length; s++) {
-        let shuffledGroups = [...groups].sort(() => Math.random() - 0.5);
-        let blockIndex = 0;
-        for (let g of shuffledGroups) {
-          while (
-            blockIndex < blocks &&
-            (groupAssignments[g].includes(s) || schedule[blockIndex][s].length >= maxPerStand)
-          ) {
-            blockIndex++;
-          }
-          if (blockIndex < blocks) {
-            schedule[blockIndex][s].push(g);
-            groupAssignments[g].push(s);
-          }
+      // Matriz [Bloques][Stands]
+      let scheduleMatrix = Array.from({ length: totalBlocks }, () => stands.map(() => []));
+      
+      // 4. Llenado circular (Rotación Perfecta)
+      groups.forEach((group, index) => {
+        for (let b = 0; b < totalBlocks; b++) {
+          const standIndex = (index + b) % stands.length;
+          scheduleMatrix[b][standIndex].push(group);
         }
-      }
+      });
 
-      // Construir tabla HTML
-      let html = "<h2>📅 Cronograma generado</h2><table><tr><th>Bloque</th><th>Horario</th>";
+      scheduleMatrix.forEach(block => block.forEach(slot => slot.sort()));
+
+      // 5. Cálculo de fin exacto
+      const totalEventMinutes = totalBlocks * totalBlockTime;
+      const endTimeObj = new Date(0, 0, 0, startHour, startMin + totalEventMinutes);
+      const endTimeStr = `${endTimeObj.getHours().toString().padStart(2, '0')}:${endTimeObj.getMinutes().toString().padStart(2, '0')}`;
+
+      // Info del cálculo
+      msgInfo.innerHTML = `<strong>✅ Resumen del Evento:</strong><br>
+      Inicio: <strong>${startTimeVal}</strong> | Fin: <strong>${endTimeStr}</strong> (${totalEventMinutes} min en total).<br>
+      Se generaron <strong>${totalBlocks} bloques</strong> de ${totalBlockTime} min c/u.<br>
+      Distribución: ${remainder > 0 ? `<strong>${remainder} stands tendrán ${baseGroupsPerStand + 1} grupos</strong> y ${stands.length - remainder} stands tendrán ${baseGroupsPerStand} grupos.` : `Todos los stands tendrán ${baseGroupsPerStand} grupos.`}`;
+      msgInfo.style.display = "block";
+
+      // Construir Tabla
+      let html = "<table><thead><tr><th>Bloque</th><th>Horario (Stand + Desplazamiento)</th>";
       stands.forEach(s => html += `<th>${s}</th>`);
-      html += "</tr>";
+      html += "</tr></thead><tbody>";
 
-      for (let b = 0; b < blocks; b++) {
-        const start = new Date(0, 0, 0, startHour, startMin + b * blockDuration);
-        const end = new Date(0, 0, 0, startHour, startMin + (b + 1) * blockDuration);
-        const format = t => `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}`;
-        html += `<tr><td>${b + 1}</td><td>${format(start)} - ${format(end)}</td>`;
-        schedule[b].forEach(slot => html += `<td>${slot.join(", ")}</td>`);
+      for (let b = 0; b < totalBlocks; b++) {
+        const blockStartMin = startMin + (b * totalBlockTime);
+        const blockStartObj = new Date(0, 0, 0, startHour, blockStartMin);
+        const standEndObj = new Date(0, 0, 0, startHour, blockStartMin + durationStand);
+        
+        const fmt = (t) => `${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}`;
+        
+        html += `<tr>
+          <td><strong>${b + 1}</strong></td>
+          <td class="time-cell">
+            <span class="time-start">${fmt(blockStartObj)} - ${fmt(standEndObj)}</span>
+            <span class="time-shift">+ ${durationShift} min desplazamiento</span>
+          </td>`;
+          
+        scheduleMatrix[b].forEach(slotGroups => {
+          let listHtml = "<ul class='group-list'>";
+          slotGroups.forEach(g => listHtml += `<li>${g}</li>`);
+          listHtml += "</ul>";
+          html += `<td>${slotGroups.length > 0 ? listHtml : '-'}</td>`;
+        });
         html += "</tr>";
       }
 
-      html += "</table>";
-      document.getElementById("scheduleOutput").innerHTML = html;
+      html += "</tbody></table>";
+      output.innerHTML = html;
+    }
+
+    function mostrarError(mensaje) {
+      const msgValidacion = document.getElementById("mensajeValidacion");
+      msgValidacion.innerHTML = `⚠️ Error: ${mensaje}`;
+      msgValidacion.style.display = "block";
+      document.getElementById("scheduleOutput").innerHTML = "";
     }
   </script>
-
 </body>
 </html>
