@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cronograma Exacto 9:00 a 11:30</title>
+  <title>Cronograma de Rotación Imprimible</title>
   <style>
     :root {
       --primary-color: #0056b3;
@@ -36,26 +36,40 @@
     
     .table-container { background: #fff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; min-width: 800px; }
-    th, td { border: 1px solid var(--border-color); padding: 12px 10px; text-align: center; font-size: 13px; vertical-align: top; }
-    th { background-color: var(--primary-color); color: white; font-weight: 600; position: sticky; top: 0; }
+    th, td { border: 1px solid var(--border-color); padding: 10px 8px; text-align: center; font-size: 13px; vertical-align: top; }
+    th { background-color: var(--primary-color); color: white; font-weight: 600; }
     tr:nth-child(even) { background-color: #f8fafc; }
     
-    .time-cell { background-color: #e2e8f0 !important; color: #0f172a; line-height: 1.6; }
-    .time-start { font-weight: bold; font-size: 15px; display: block; }
+    .time-cell { background-color: #e2e8f0 !important; color: #0f172a; line-height: 1.4; }
+    .time-start { font-weight: bold; font-size: 14px; display: block; }
     .time-shift { font-size: 11px; color: #64748b; font-style: italic; display: block; margin-top: 2px;}
     
     .group-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
-    .group-list li { background: #f1f5f9; padding: 3px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-weight: 500;}
+    .group-list li { background: #f1f5f9; padding: 3px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-weight: 500; font-size: 12px;}
 
     .sugerencia { font-size: 12px; color: #d97706; margin-top: 4px; font-weight: bold; }
 
+    /* --- ESTILOS ESPECÍFICOS PARA IMPRESIÓN --- */
     @media print {
-      body { background: white; padding: 0; }
+      @page { 
+        size: landscape; /* Fuerza la hoja horizontal */
+        margin: 10mm; 
+      }
+      body { background: white; padding: 0; margin: 0; }
       .config-container, .no-print { display: none !important; }
-      .table-container { box-shadow: none; border-radius: 0; }
+      .table-container { box-shadow: none; border-radius: 0; overflow: visible; }
+      table { width: 100%; min-width: 100%; table-layout: fixed; border: 2px solid #333; }
+      th, td { border: 1px solid #333; padding: 6px 4px; font-size: 11px; word-wrap: break-word; }
       th { background-color: #eee !important; color: black !important; -webkit-print-color-adjust: exact; }
       tr:nth-child(even) { background-color: #f9f9f9 !important; -webkit-print-color-adjust: exact; }
-      td { border: 1px solid #999; }
+      
+      /* Ajustar anchos de columnas para que no se recorte */
+      th:first-child, td:first-child { width: 5%; } /* Bloque */
+      th:nth-child(2), td:nth-child(2) { width: 15%; } /* Horario */
+      
+      .group-list li { border: none; background: transparent; padding: 1px 0; font-size: 10px; }
+      .time-start { font-size: 12px; }
+      .time-shift { font-size: 9px; }
     }
   </style>
 </head>
@@ -122,15 +136,13 @@
 
     function sugerirGrupos() {
       const aforo = parseInt(document.getElementById("aforoStand").value) || 0;
-      // Sugerimos la capacidad dividiendo el aforo entre 4 (peor escenario: grupos de 4 estudiantes)
       const capacidadSugerida = Math.floor(aforo / 4); 
-      
       const inputMaxGroups = document.getElementById("maxGroups");
       const textoSugerencia = document.getElementById("textoSugerencia");
       
       if (capacidadSugerida > 0) {
         inputMaxGroups.value = capacidadSugerida;
-        textoSugerencia.innerHTML = `💡 Capacidad sugerida: ${capacidadSugerida} grupos (calculado con 4 est. c/u)`;
+        textoSugerencia.innerHTML = `💡 Capacidad sugerida: ${capacidadSugerida} grupos.`;
       } else {
         inputMaxGroups.value = 0;
         textoSugerencia.innerHTML = "";
@@ -166,29 +178,21 @@
         return;
       }
 
-      // 1. EL TIEMPO ES LEY: La cantidad de bloques SIEMPRE es igual al número de stands
-      // Para que todos pasen por todos, se necesitan exactamente 6 bloques (si hay 6 stands).
       const totalBlocks = stands.length; 
-      
       const totalBlockTime = durationStand + durationShift;
       const [startHour, startMin] = startTimeVal.split(":").map(Number);
 
-      // 2. Calcular cuántos grupos reales tocan por stand
       const baseGroupsPerStand = Math.floor(groups.length / stands.length);
       const remainder = groups.length % stands.length;
-
-      // 3. Validar si la capacidad del stand (maxGroups) es suficiente
-      // Si los grupos que tocan por stand superan el aforo, lanzamos una alerta (pero generamos el cronograma igual)
       const maxGroupsInAnyStand = baseGroupsPerStand + (remainder > 0 ? 1 : 0);
+
       if (maxGroupsInAnyStand > maxGroups) {
-        msgValidacion.innerHTML = `⚠️ <strong>Atención:</strong> Tienes ${groups.length} grupos y ${stands.length} stands. En cada bloque habrá hasta ${maxGroupsInAnyStand} grupos por stand, lo cual <strong>supera tu capacidad sugerida</strong> de ${maxGroups} grupos (Aforo: ${aforoStand} est.). El cronograma se generará, pero considera reducir grupos o aumentar el aforo.`;
+        msgValidacion.innerHTML = `⚠️ <strong>Atención:</strong> Habrá hasta ${maxGroupsInAnyStand} grupos por stand, superando tu capacidad sugerida (${maxGroups}). El cronograma se generará, pero revisa tu logística.`;
         msgValidacion.style.display = "block";
       }
 
-      // Matriz [Bloques][Stands]
       let scheduleMatrix = Array.from({ length: totalBlocks }, () => stands.map(() => []));
       
-      // 4. Llenado circular (Rotación Perfecta)
       groups.forEach((group, index) => {
         for (let b = 0; b < totalBlocks; b++) {
           const standIndex = (index + b) % stands.length;
@@ -198,20 +202,15 @@
 
       scheduleMatrix.forEach(block => block.forEach(slot => slot.sort()));
 
-      // 5. Cálculo de fin exacto
       const totalEventMinutes = totalBlocks * totalBlockTime;
       const endTimeObj = new Date(0, 0, 0, startHour, startMin + totalEventMinutes);
       const endTimeStr = `${endTimeObj.getHours().toString().padStart(2, '0')}:${endTimeObj.getMinutes().toString().padStart(2, '0')}`;
 
-      // Info del cálculo
-      msgInfo.innerHTML = `<strong>✅ Resumen del Evento:</strong><br>
-      Inicio: <strong>${startTimeVal}</strong> | Fin: <strong>${endTimeStr}</strong> (${totalEventMinutes} min en total).<br>
-      Se generaron <strong>${totalBlocks} bloques</strong> de ${totalBlockTime} min c/u.<br>
-      Distribución: ${remainder > 0 ? `<strong>${remainder} stands tendrán ${baseGroupsPerStand + 1} grupos</strong> y ${stands.length - remainder} stands tendrán ${baseGroupsPerStand} grupos.` : `Todos los stands tendrán ${baseGroupsPerStand} grupos.`}`;
+      msgInfo.innerHTML = `<strong>✅ Resumen:</strong> Inicio: ${startTimeVal} | Fin: <strong>${endTimeStr}</strong> (${totalEventMinutes} min).<br>
+      Se generaron <strong>${totalBlocks} bloques</strong>. Distribución: ${remainder > 0 ? `<strong>${remainder} stands con ${baseGroupsPerStand + 1} grupos</strong> y ${stands.length - remainder} stands con ${baseGroupsPerStand} grupos.` : `Todos los stands con ${baseGroupsPerStand} grupos.`}`;
       msgInfo.style.display = "block";
 
-      // Construir Tabla
-      let html = "<table><thead><tr><th>Bloque</th><th>Horario (Stand + Desplazamiento)</th>";
+      let html = "<table><thead><tr><th>Bloque</th><th>Horario</th>";
       stands.forEach(s => html += `<th>${s}</th>`);
       html += "</tr></thead><tbody>";
 
@@ -226,7 +225,7 @@
           <td><strong>${b + 1}</strong></td>
           <td class="time-cell">
             <span class="time-start">${fmt(blockStartObj)} - ${fmt(standEndObj)}</span>
-            <span class="time-shift">+ ${durationShift} min desplazamiento</span>
+            <span class="time-shift">+ ${durationShift} min desplaz.</span>
           </td>`;
           
         scheduleMatrix[b].forEach(slotGroups => {
